@@ -70,10 +70,10 @@ class Cube(Widget):
             glLinkProgram(p)
             s.p = p
             s.u = glGetUniformLocation(p, b"m")
-            v = ctypes.c_uint(); glGenBuffers(1, ctypes.byref(v)); s.v = v
+            v = glGenBuffers(1); s.v = v
             glBindBuffer(GL_ARRAY_BUFFER, v)
             glBufferData(GL_ARRAY_BUFFER, len(V)*4, f32(V), GL_STATIC_DRAW)
-            e = ctypes.c_uint(); glGenBuffers(1, ctypes.byref(e)); s.e = e
+            e = glGenBuffers(1); s.e = e
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, e)
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(I)*4, u32(I), GL_STATIC_DRAW)
             glEnable(GL_DEPTH_TEST)
