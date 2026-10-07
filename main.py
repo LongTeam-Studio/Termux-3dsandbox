@@ -53,59 +53,61 @@ class Cube(Widget):
             Callback(s._draw)
         Clock.schedule_interval(s._upd, 1/60.0)
 
-    def _cmp(s, src, kind):
-        sh = glCreateShader(kind)
-        glShaderSource(sh, src)
-        glCompileShader(sh)
-        if glGetShaderiv(sh, GL_COMPILE_STATUS) != 1:
-            raise RuntimeError(glGetShaderInfoLog(sh))
-        return sh
-
-    def _init(s):
+    def _init(s, *a, **k):
         if s.ok: return
-        vs = s._cmp(VS, GL_VERTEX_SHADER)
-        fs = s._cmp(FS, GL_FRAGMENT_SHADER)
-        p = glCreateProgram()
-        glAttachShader(p, vs); glAttachShader(p, fs)
-        glBindAttribLocation(p, 0, b"p")
-        glBindAttribLocation(p, 1, b"c")
-        glLinkProgram(p)
-        if glGetProgramiv(p, GL_LINK_STATUS) != 1:
-            raise RuntimeError(glGetProgramInfoLog(p))
-        s.p = p
-        s.u = glGetUniformLocation(p, b"m")
-        v = ctypes.c_uint(); glGenBuffers(1, ctypes.byref(v)); s.v = v
-        glBindBuffer(GL_ARRAY_BUFFER, v)
-        glBufferData(GL_ARRAY_BUFFER, len(V)*4, f32(V), GL_STATIC_DRAW)
-        e = ctypes.c_uint(); glGenBuffers(1, ctypes.byref(e)); s.e = e
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, e)
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(I)*4, u32(I), GL_STATIC_DRAW)
-        glEnable(GL_DEPTH_TEST)
-        s.ok = True
+        try:
+            vs = glCreateShader(GL_VERTEX_SHADER)
+            glShaderSource(vs, VS)
+            glCompileShader(vs)
+            fs = glCreateShader(GL_FRAGMENT_SHADER)
+            glShaderSource(fs, FS)
+            glCompileShader(fs)
+            p = glCreateProgram()
+            glAttachShader(p, vs)
+            glAttachShader(p, fs)
+            glBindAttribLocation(p, 0, b"p")
+            glBindAttribLocation(p, 1, b"c")
+            glLinkProgram(p)
+            s.p = p
+            s.u = glGetUniformLocation(p, b"m")
+            v = ctypes.c_uint(); glGenBuffers(1, ctypes.byref(v)); s.v = v
+            glBindBuffer(GL_ARRAY_BUFFER, v)
+            glBufferData(GL_ARRAY_BUFFER, len(V)*4, f32(V), GL_STATIC_DRAW)
+            e = ctypes.c_uint(); glGenBuffers(1, ctypes.byref(e)); s.e = e
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, e)
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(I)*4, u32(I), GL_STATIC_DRAW)
+            glEnable(GL_DEPTH_TEST)
+            s.ok = True
+            print("[gl] init ok, prog=%s u=%s" % (p, s.u))
+        except Exception as ex:
+            print("[gl] init fail: %s" % ex)
 
     def _upd(s, dt):
         s.ax += dt*0.7
         s.ay += dt*1.2
         s.canvas.ask_update()
 
-    def _draw(s):
+    def _draw(s, *a, **k):
         if not s.ok: return
-        glClearColor(0.1, 0.1, 0.15, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glUseProgram(s.p)
-        w, h = Window.size
-        proj = persp(60.0, w/max(h,1), 0.1, 100.0)
-        view = tr(0,0,-3)
-        model = mm(ry(s.ay), rx(s.ax))
-        mvp = mm(proj, mm(view, model))
-        glUniformMatrix4fv(s.u, 1, GL_FALSE, f32(mvp))
-        glBindBuffer(GL_ARRAY_BUFFER, s.v)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s.e)
-        glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,24,ctypes.c_void_p(0))
-        glEnableVertexAttribArray(0)
-        glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,24,ctypes.c_void_p(12))
-        glEnableVertexAttribArray(1)
-        glDrawElements(GL_TRIANGLES, len(I), GL_UNSIGNED_INT, ctypes.c_void_p(0))
+        try:
+            glClearColor(0.1, 0.1, 0.15, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glUseProgram(s.p)
+            w, h = Window.size
+            proj = persp(60.0, w/max(h,1), 0.1, 100.0)
+            view = tr(0,0,-3)
+            model = mm(ry(s.ay), rx(s.ax))
+            mvp = mm(proj, mm(view, model))
+            glUniformMatrix4fv(s.u, 1, GL_FALSE, f32(mvp))
+            glBindBuffer(GL_ARRAY_BUFFER, s.v)
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s.e)
+            glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,24,ctypes.c_void_p(0))
+            glEnableVertexAttribArray(0)
+            glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,24,ctypes.c_void_p(12))
+            glEnableVertexAttribArray(1)
+            glDrawElements(GL_TRIANGLES, len(I), GL_UNSIGNED_INT, ctypes.c_void_p(0))
+        except Exception as ex:
+            print("[gl] draw fail: %s" % ex)
 
 class S(App):
     def build(s):
