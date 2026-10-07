@@ -11,6 +11,8 @@ android.api = 31
 android.minapi = 28
 android.ndk = 25b
 android.archs = arm64-v8a
+android.accept_sdk_license = True
+android.build_tools = 33.0.2
 
 p4a.bootstrap = sdl2
 requirements = python3,pyglet,sdl2,pyjnius
