@@ -72,10 +72,10 @@ class Cube(Widget):
             s.u = glGetUniformLocation(p, b"m")
             v = glGenBuffers(1); s.v = v
             glBindBuffer(GL_ARRAY_BUFFER, v)
-            glBufferData(GL_ARRAY_BUFFER, len(V)*4, f32(V), GL_STATIC_DRAW)
+            glBufferData(GL_ARRAY_BUFFER, len(V)*4, bytes(f32(V)), GL_STATIC_DRAW)
             e = glGenBuffers(1); s.e = e
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, e)
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(I)*4, u32(I), GL_STATIC_DRAW)
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(I)*4, bytes(u32(I)), GL_STATIC_DRAW)
             glEnable(GL_DEPTH_TEST)
             s.ok = True
             print("[gl] init ok, prog=%s u=%s" % (p, s.u))
@@ -101,11 +101,11 @@ class Cube(Widget):
             glUniformMatrix4fv(s.u, 1, GL_FALSE, f32(mvp))
             glBindBuffer(GL_ARRAY_BUFFER, s.v)
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s.e)
-            glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,24,ctypes.c_void_p(0))
+            glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,24,0)
             glEnableVertexAttribArray(0)
-            glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,24,ctypes.c_void_p(12))
+            glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,24,12)
             glEnableVertexAttribArray(1)
-            glDrawElements(GL_TRIANGLES, len(I), GL_UNSIGNED_INT, ctypes.c_void_p(0))
+            glDrawElements(GL_TRIANGLES, len(I), GL_UNSIGNED_INT, 0)
         except Exception as ex:
             print("[gl] draw fail: %s" % ex)
 

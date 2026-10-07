@@ -5,7 +5,7 @@ package.domain = org.example
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,glsl,ttf
-version = 0.1.7
+version = 0.1.8
 
 android.api = 31
 android.minapi = 28
