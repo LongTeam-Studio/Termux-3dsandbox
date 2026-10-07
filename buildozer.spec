@@ -4,8 +4,8 @@ package.name = sandbox3d
 package.domain = org.example
 
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,glsl,ttf,wav,ogg
-version = 0.1.1
+source.include_exts = py,png,jpg,kv,atlas,glsl,ttf
+version = 0.1.2
 
 android.api = 31
 android.minapi = 28
@@ -17,7 +17,7 @@ android.permissions = READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE
 
 p4a.bootstrap = sdl2
 p4a.branch = v2024.01.21
-requirements = python3,pyglet,sdl2,pyjnius
+requirements = python3,kivy
 
 fullscreen = 1
 orientation = landscape
