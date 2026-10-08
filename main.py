@@ -136,7 +136,7 @@ class Sandbox(Widget):
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s.ebo)
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 24, None)
             glEnableVertexAttribArray(0)
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(12))
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 24, 12)
             glEnableVertexAttribArray(1)
             glDrawElements(GL_TRIANGLES, s.n_idx, GL_UNSIGNED_INT, None)
         except Exception as ex:
