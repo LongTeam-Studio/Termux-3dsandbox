@@ -57,10 +57,10 @@ class Cube(Widget):
         if s.ok: return
         try:
             vs = glCreateShader(GL_VERTEX_SHADER)
-            glShaderSource(vs, VS.encode())
+            glShaderSource(vs, VS)
             glCompileShader(vs)
             fs = glCreateShader(GL_FRAGMENT_SHADER)
-            glShaderSource(fs, FS.encode())
+            glShaderSource(fs, FS)
             glCompileShader(fs)
             p = glCreateProgram()
             glAttachShader(p, vs)
@@ -72,15 +72,15 @@ class Cube(Widget):
             s.u = glGetUniformLocation(p, b"m")
             v = glGenBuffers(1); s.v = v
             glBindBuffer(GL_ARRAY_BUFFER, v)
-            glBufferData(GL_ARRAY_BUFFER, len(V)*4, bytes(f32(V)), GL_STATIC_DRAW)
+            s._vd=f32(V); glBufferData(GL_ARRAY_BUFFER, len(V)*4, ctypes.addressof(s._vd), GL_STATIC_DRAW)
             e = glGenBuffers(1); s.e = e
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, e)
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(I)*4, bytes(u32(I)), GL_STATIC_DRAW)
+            s._ed=u32(I); glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(I)*4, ctypes.addressof(s._ed), GL_STATIC_DRAW)
             glEnable(GL_DEPTH_TEST)
             s.ok = True
             print("[gl] init ok, prog=%s u=%s" % (p, s.u))
         except Exception as ex:
-            print("[gl] init fail: %s" % ex)
+            print("[gl] init fail: %s" % ex); import traceback; traceback.print_exc()
 
     def _upd(s, dt):
         s.ax += dt*0.7
