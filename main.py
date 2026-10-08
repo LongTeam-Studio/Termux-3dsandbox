@@ -6,48 +6,69 @@ from kivy.core.window import Window
 from kivy.graphics import Callback
 from kivy.graphics.opengl import *
 
-VS = "attribute vec3 p; attribute vec3 c; uniform mat4 m; varying vec3 v; void main(){ gl_Position=m*vec4(p,1.0); v=c; }"
-FS = "precision mediump float; varying vec3 v; void main(){ gl_FragColor=vec4(v,1.0); }"
+from terrain import TerrainGenerator, CHUNK_SIZE, Y_MAX
+from renderer import build_mesh
 
-V = [-0.5,-0.5,0.5,1,0,0,  0.5,-0.5,0.5,1,0,0,  0.5,0.5,0.5,1,0,0, -0.5,0.5,0.5,1,0,0,
-      0.5,-0.5,-0.5,0,1,0, -0.5,-0.5,-0.5,0,1,0, -0.5,0.5,-0.5,0,1,0,  0.5,0.5,-0.5,0,1,0,
-     -0.5,-0.5,-0.5,0,0,1, -0.5,-0.5,0.5,0,0,1, -0.5,0.5,0.5,0,0,1, -0.5,0.5,-0.5,0,0,1,
-      0.5,-0.5,0.5,1,1,0,  0.5,-0.5,-0.5,1,1,0,  0.5,0.5,-0.5,1,1,0,  0.5,0.5,0.5,1,1,0,
-     -0.5,0.5,0.5,0,1,1,   0.5,0.5,0.5,0,1,1,   0.5,0.5,-0.5,0,1,1, -0.5,0.5,-0.5,0,1,1,
-     -0.5,-0.5,-0.5,1,0,1, 0.5,-0.5,-0.5,1,0,1, 0.5,-0.5,0.5,1,0,1, -0.5,-0.5,0.5,1,0,1]
-I = [0,1,2,0,2,3, 4,5,6,4,6,7, 8,9,10,8,10,11, 12,13,14,12,14,15,
-     16,17,18,16,18,19, 20,21,22,20,22,23]
 
-def f32(d): return (ctypes.c_float*len(d))(*d)
-def u32(d): return (ctypes.c_uint*len(d))(*d)
+VS = """
+attribute vec3 p;
+attribute vec3 c;
+uniform mat4 m;
+varying vec3 v;
+void main() {
+    gl_Position = m * vec4(p, 1.0);
+    v = c;
+}
+"""
 
-def persp(fov,asp,n,f):
-    t = 1.0/math.tan(math.radians(fov)/2)
+FS = """
+precision mediump float;
+varying vec3 v;
+void main() {
+    gl_FragColor = vec4(v, 1.0);
+}
+"""
+
+
+def f32(d): return (ctypes.c_float * len(d))(*d)
+def u32(d): return (ctypes.c_uint * len(d))(*d)
+
+
+def persp(fov, asp, n, f):
+    t = 1.0 / math.tan(math.radians(fov) / 2)
     return [t/asp,0,0,0, 0,t,0,0, 0,0,(f+n)/(n-f),-1, 0,0,2*f*n/(n-f),0]
 
-def mm(a,b):
-    r = [0]*16
+
+def mul(a, b):
+    r = [0.0] * 16
     for i in range(4):
         for j in range(4):
-            r[i*4+j] = sum(a[k*4+j]*b[i*4+k] for k in range(4))
+            s = 0.0
+            for k in range(4):
+                s += a[k*4+j] * b[i*4+k]
+            r[i*4+j] = s
     return r
 
-def ry(a):
-    c,s = math.cos(a),math.sin(a)
+
+def rot_y(a):
+    c, s = math.cos(a), math.sin(a)
     return [c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]
 
-def rx(a):
-    c,s = math.cos(a),math.sin(a)
-    return [1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]
 
-def tr(x,y,z):
+def trans(x, y, z):
     return [1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]
 
-class Cube(Widget):
+
+class Sandbox(Widget):
     def __init__(s, **kw):
         super().__init__(**kw)
-        s.p=None; s.v=None; s.e=None; s.u=None
-        s.ax=0.0; s.ay=0.0; s.ok=False
+        s.prog = None
+        s.vbo = None
+        s.ebo = None
+        s.u_mvp = None
+        s.n_idx = 0
+        s.ok = False
+        s.angle = 0.0
         with s.canvas:
             Callback(s._init)
             Callback(s._draw)
@@ -56,63 +77,79 @@ class Cube(Widget):
     def _init(s, *a, **k):
         if s.ok: return
         try:
+            print("[gl] generating terrain...")
+            gen = TerrainGenerator(seed=12345)
+            blocks = gen.generate_chunk(0, 0)
+            verts, idx = build_mesh(blocks)
+            s.n_idx = len(idx)
+            print("[gl] mesh: %d verts, %d indices" % (len(verts)//6, len(idx)))
+
             vs = glCreateShader(GL_VERTEX_SHADER)
-            glShaderSource(vs, VS.encode())
+            glShaderSource(vs, VS)
             glCompileShader(vs)
             fs = glCreateShader(GL_FRAGMENT_SHADER)
-            glShaderSource(fs, FS.encode())
+            glShaderSource(fs, FS)
             glCompileShader(fs)
             p = glCreateProgram()
-            glAttachShader(p, vs)
-            glAttachShader(p, fs)
+            glAttachShader(p, vs); glAttachShader(p, fs)
             glBindAttribLocation(p, 0, b"p")
             glBindAttribLocation(p, 1, b"c")
             glLinkProgram(p)
-            s.p = p
-            s.u = glGetUniformLocation(p, b"m")
-            v = glGenBuffers(1)[0]; s.v = v
+            s.prog = p
+            s.u_mvp = glGetUniformLocation(p, b"m")
+
+            v = glGenBuffers(1)[0]; s.vbo = v
             glBindBuffer(GL_ARRAY_BUFFER, v)
-            s._vd=f32(V); glBufferData(GL_ARRAY_BUFFER, len(V)*4, bytes(f32(V)), GL_STATIC_DRAW)
-            e = glGenBuffers(1)[0]; s.e = e
+            glBufferData(GL_ARRAY_BUFFER, len(verts)*4, bytes(f32(verts)), GL_STATIC_DRAW)
+            e = glGenBuffers(1)[0]; s.ebo = e
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, e)
-            s._ed=u32(I); glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(I)*4, bytes(u32(I)), GL_STATIC_DRAW)
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(idx)*4, bytes(u32(idx)), GL_STATIC_DRAW)
             glEnable(GL_DEPTH_TEST)
             s.ok = True
-            print("[gl] init ok, prog=%s u=%s" % (p, s.u))
+            print("[gl] init ok")
         except Exception as ex:
-            print("[gl] init fail: %s" % ex); import traceback; traceback.print_exc()
+            import traceback
+            print("[gl] init fail: %s" % ex)
+            traceback.print_exc()
 
     def _upd(s, dt):
-        s.ax += dt*0.7
-        s.ay += dt*1.2
+        s.angle += dt * 0.4
         s.canvas.ask_update()
 
     def _draw(s, *a, **k):
         if not s.ok: return
         try:
-            glClearColor(0.1, 0.1, 0.15, 1.0)
+            glClearColor(0.45, 0.65, 0.90, 1.0)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            glUseProgram(s.p)
-            w, h = Window.size
-            proj = persp(60.0, w/max(h,1), 0.1, 100.0)
-            view = tr(0,0,-3)
-            model = mm(ry(s.ay), rx(s.ax))
-            mvp = mm(proj, mm(view, model))
-            glUniformMatrix4fv(s.u, 1, GL_FALSE, bytes(f32(mvp)))
-            glBindBuffer(GL_ARRAY_BUFFER, s.v)
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s.e)
-            glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,24,0)
-            glEnableVertexAttribArray(0)
-            glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,24,12)
-            glEnableVertexAttribArray(1)
-            glDrawElements(GL_TRIANGLES, len(I), GL_UNSIGNED_INT, 0)
-        except Exception as ex:
-            print("[gl] draw fail: %s" % ex)
+            glUseProgram(s.prog)
 
-class S(App):
+            w, h = Window.size
+            proj = persp(60.0, w / max(h, 1), 0.1, 500.0)
+            # 视角绕原点转，chunk 先平移到原点（中心 8,32,8）
+            view = mul(trans(0, -32, -70), rot_y(s.angle))
+            model = trans(-8, 0, -8)
+            mvp = mul(proj, mul(view, model))
+
+            glUniformMatrix4fv(s.u_mvp, 1, GL_FALSE, bytes(f32(mvp)))
+
+            glBindBuffer(GL_ARRAY_BUFFER, s.vbo)
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s.ebo)
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 24, None)
+            glEnableVertexAttribArray(0)
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(12))
+            glEnableVertexAttribArray(1)
+            glDrawElements(GL_TRIANGLES, s.n_idx, GL_UNSIGNED_INT, None)
+        except Exception as ex:
+            import traceback
+            print("[gl] draw fail: %s" % ex)
+            traceback.print_exc()
+
+
+class SandboxApp(App):
     def build(s):
-        Window.clearcolor = (0.1, 0.1, 0.15, 1.0)
-        return Cube()
+        Window.clearcolor = (0.45, 0.65, 0.90, 1.0)
+        return Sandbox()
+
 
 if __name__ == "__main__":
-    S().run()
+    SandboxApp().run()

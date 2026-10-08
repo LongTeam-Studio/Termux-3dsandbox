@@ -5,7 +5,7 @@ package.domain = org.example
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,glsl,ttf
-version = 0.1.14
+version = 0.1.15
 
 android.api = 31
 android.minapi = 28
@@ -17,7 +17,7 @@ android.permissions = READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE
 
 p4a.bootstrap = sdl2
 p4a.branch = v2024.01.21
-requirements = python3,kivy
+requirements = python3,kivy,numpy
 
 fullscreen = 1
 orientation = landscape
