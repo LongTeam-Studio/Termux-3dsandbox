@@ -57,10 +57,10 @@ class Cube(Widget):
         if s.ok: return
         try:
             vs = glCreateShader(GL_VERTEX_SHADER)
-            glShaderSource(vs, VS)
+            glShaderSource(vs, VS.encode())
             glCompileShader(vs)
             fs = glCreateShader(GL_FRAGMENT_SHADER)
-            glShaderSource(fs, FS)
+            glShaderSource(fs, FS.encode())
             glCompileShader(fs)
             p = glCreateProgram()
             glAttachShader(p, vs)
