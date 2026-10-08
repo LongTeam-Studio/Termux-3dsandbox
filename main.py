@@ -72,10 +72,10 @@ class Cube(Widget):
             s.u = glGetUniformLocation(p, b"m")
             v = glGenBuffers(1)[0]; s.v = v
             glBindBuffer(GL_ARRAY_BUFFER, v)
-            s._vd=f32(V); glBufferData(GL_ARRAY_BUFFER, len(V)*4, ctypes.addressof(s._vd), GL_STATIC_DRAW)
+            s._vd=f32(V); glBufferData(GL_ARRAY_BUFFER, len(V)*4, bytes(f32(V)), GL_STATIC_DRAW)
             e = glGenBuffers(1)[0]; s.e = e
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, e)
-            s._ed=u32(I); glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(I)*4, ctypes.addressof(s._ed), GL_STATIC_DRAW)
+            s._ed=u32(I); glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(I)*4, bytes(u32(I)), GL_STATIC_DRAW)
             glEnable(GL_DEPTH_TEST)
             s.ok = True
             print("[gl] init ok, prog=%s u=%s" % (p, s.u))
