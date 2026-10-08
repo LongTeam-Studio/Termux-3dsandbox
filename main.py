@@ -98,7 +98,7 @@ class Cube(Widget):
             view = tr(0,0,-3)
             model = mm(ry(s.ay), rx(s.ax))
             mvp = mm(proj, mm(view, model))
-            glUniformMatrix4fv(s.u, 1, GL_FALSE, f32(mvp))
+            glUniformMatrix4fv(s.u, 1, GL_FALSE, bytes(f32(mvp)))
             glBindBuffer(GL_ARRAY_BUFFER, s.v)
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s.e)
             glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,24,0)

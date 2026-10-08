@@ -5,7 +5,7 @@ package.domain = org.example
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,glsl,ttf
-version = 0.1.13
+version = 0.1.14
 
 android.api = 31
 android.minapi = 28
@@ -26,3 +26,8 @@ log_level = 2
 [buildozer]
 log_level = 2
 warn_on_root = 0
+
+android.keystore = mykey.keystore
+android.keyalias = mykey
+android.keystore_password = android
+android.key_password = android
