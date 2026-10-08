@@ -134,11 +134,11 @@ class Sandbox(Widget):
 
             glBindBuffer(GL_ARRAY_BUFFER, s.vbo)
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s.ebo)
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 24, None)
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 24, 0)
             glEnableVertexAttribArray(0)
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 24, 12)
             glEnableVertexAttribArray(1)
-            glDrawElements(GL_TRIANGLES, s.n_idx, GL_UNSIGNED_INT, None)
+            glDrawElements(GL_TRIANGLES, s.n_idx, GL_UNSIGNED_INT, 0)
         except Exception as ex:
             import traceback
             print("[gl] draw fail: %s" % ex)
