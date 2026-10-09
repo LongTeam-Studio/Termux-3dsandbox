@@ -142,7 +142,7 @@ class Sandbox(Widget):
         if s.last_x is None: return
         dx = touch.x - s.last_x
         dy = touch.y - s.last_y
-        s.yaw -= dx * 0.01
+        s.yaw += dx * 0.01
         s.pitch -= dy * 0.01
         s.pitch = max(-1.4, min(1.4, s.pitch))
         s.last_x = touch.x
