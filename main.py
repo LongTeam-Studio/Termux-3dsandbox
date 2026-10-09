@@ -59,6 +59,11 @@ def trans(x, y, z):
     return [1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]
 
 
+def rot_x(a):
+    c, s = math.cos(a), math.sin(a)
+    return [1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]
+
+
 class Sandbox(Widget):
     def __init__(s, **kw):
         super().__init__(**kw)
@@ -68,7 +73,10 @@ class Sandbox(Widget):
         s.u_mvp = None
         s.n_idx = 0
         s.ok = False
-        s.angle = 0.0
+        s.yaw = 0.5
+        s.pitch = -0.4
+        s.last_x = None
+        s.last_y = None
         with s.canvas:
             Callback(s._init)
             Callback(s._draw)
@@ -113,8 +121,26 @@ class Sandbox(Widget):
             traceback.print_exc()
 
     def _upd(s, dt):
-        s.angle += dt * 0.4
+        pass
         s.canvas.ask_update()
+
+    def on_touch_down(s, touch):
+        s.last_x = touch.x
+        s.last_y = touch.y
+
+    def on_touch_move(s, touch):
+        if s.last_x is None: return
+        dx = touch.x - s.last_x
+        dy = touch.y - s.last_y
+        s.yaw -= dx * 0.01
+        s.pitch -= dy * 0.01
+        s.pitch = max(-1.4, min(1.4, s.pitch))
+        s.last_x = touch.x
+        s.last_y = touch.y
+
+    def on_touch_up(s, touch):
+        s.last_x = None
+        s.last_y = None
 
     def _draw(s, *a, **k):
         if not s.ok: return
@@ -126,7 +152,7 @@ class Sandbox(Widget):
             w, h = Window.size
             proj = persp(60.0, w / max(h, 1), 0.1, 500.0)
             # 视角绕原点转，chunk 先平移到原点（中心 8,32,8）
-            view = mul(trans(0, -32, -70), rot_y(s.angle))
+            view = mul(trans(0, -32, -70), mul(rot_y(s.yaw), rot_x(s.pitch)))
             model = trans(-8, 0, -8)
             mvp = mul(proj, mul(view, model))
 
