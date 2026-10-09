@@ -73,10 +73,15 @@ class Sandbox(Widget):
         s.u_mvp = None
         s.n_idx = 0
         s.ok = False
-        s.yaw = 0.5
-        s.pitch = -0.4
+        s.yaw = 0.0
+        s.pitch = -0.3
         s.last_x = None
         s.last_y = None
+        s.px = 8.0
+        s.py = 40.0
+        s.pz = 8.0
+        s.moving = False
+        s.speed = 4.0
         with s.canvas:
             Callback(s._init)
             Callback(s._draw)
@@ -121,12 +126,17 @@ class Sandbox(Widget):
             traceback.print_exc()
 
     def _upd(s, dt):
-        pass
+        if s.moving:
+            fx = -math.sin(s.yaw)
+            fz = -math.cos(s.yaw)
+            s.px += fx * s.speed * dt
+            s.pz += fz * s.speed * dt
         s.canvas.ask_update()
 
     def on_touch_down(s, touch):
         s.last_x = touch.x
         s.last_y = touch.y
+        s.moving = True
 
     def on_touch_move(s, touch):
         if s.last_x is None: return
@@ -141,6 +151,7 @@ class Sandbox(Widget):
     def on_touch_up(s, touch):
         s.last_x = None
         s.last_y = None
+        s.moving = False
 
     def _draw(s, *a, **k):
         if not s.ok: return
@@ -152,9 +163,10 @@ class Sandbox(Widget):
             w, h = Window.size
             proj = persp(60.0, w / max(h, 1), 0.1, 500.0)
             # 视角绕原点转，chunk 先平移到原点（中心 8,32,8）
-            view = mul(trans(0, -32, -70), mul(rot_y(s.yaw), rot_x(s.pitch)))
-            model = trans(-8, 0, -8)
-            mvp = mul(proj, mul(view, model))
+            view = mul(rot_x(-s.pitch),
+                       mul(rot_y(-s.yaw),
+                           trans(-s.px, -s.py, -s.pz)))
+            mvp = mul(proj, view)
 
             glUniformMatrix4fv(s.u_mvp, 1, GL_FALSE, bytes(f32(mvp)))
 
